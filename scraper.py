@@ -108,7 +108,7 @@ def download():
         os.makedirs(CACHE_DIR)
     except:
         pass
-    for year in range(2012, datetime.now().year):
+    for year in range(2007, datetime.now().year):
         log.info("Downloading FTS for %s", year)
         url = BASE_URL % year
         fn = os.path.join(CACHE_DIR, 'export_%s.zip' % year)
