@@ -61,6 +61,8 @@ def convert_commitment(base, commitment):
         else:
             row['alias'] = row['beneficiary']
         row['address'] = beneficiary.findtext('address')
+        row['vat_number'] = beneficiary.findtext('vat')
+        row['expensetype'] = beneficiary.findtext('expensetype')
         row['city'] = beneficiary.findtext('city')
         row['postcode'] = beneficiary.findtext('post_code')
         row['country'] = beneficiary.findtext('country')
@@ -77,19 +79,22 @@ def convert_commitment(base, commitment):
         base['source_id'] += 1
         row.update(base)
         log.info('%s - %s', row['grant_subject'], row['beneficiary'])
-        fts_entry.upsert(row, ['source_file', 'source_id'])
+        entry.upsert(row, ['source_file', 'source_id'])
 
-# def clean_text(text):
-#     h = HTMLParser.HTMLParser()
-#     text = filter(string.printable.__contains__, text)
-#     text = h.unescape(text)
-#     text = text.replace('&', '&amp;')
-#     return text.encode('utf-8')
+
+def clean_text(text):
+    h = HTMLParser.HTMLParser()
+    text = filter(string.printable.__contains__, text)
+    text = h.unescape(text)
+    # text = text.replace('<![CDATA[', '')
+    text = text.replace(']]</', ']]></')
+    text = text.replace('&', '&amp;')
+    return text.encode('utf-8')
 
 
 def convert_file(fh, url):
     text = fh.read().decode('utf-8')
-    # text = clean_text(text)
+    text = clean_text(text)
     doc = etree.fromstring(text)
     base = {'source_url': url, 'source_id': 0}
     for i, commitment in enumerate(doc.findall('.//commitment')):
@@ -103,8 +108,7 @@ def download():
         os.makedirs(CACHE_DIR)
     except:
         pass
-    # for year in range(2007, datetime.now().year):
-    for year in [2014]:
+    for year in range(2012, datetime.now().year):
         log.info("Downloading FTS for %s", year)
         url = BASE_URL % year
         fn = os.path.join(CACHE_DIR, 'export_%s.zip' % year)
@@ -112,8 +116,10 @@ def download():
         with zipfile.ZipFile(fn, 'r') as zf:
             for name in zf.namelist():
                 fh = zf.open(name, 'r')
-                for evt, el in etree.iterparse(fh):
-                    print evt, el
+                convert_file(fh, url)
+                # for evt, el in etree.iterparse(fh):
+                #     pass
+                #     # print evt, el
 
 
 if __name__ == '__main__':
