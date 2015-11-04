@@ -11,7 +11,6 @@ import requests
 import dataset
 from lxml import etree
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('fts')
 
 CACHE_DIR = 'data'
@@ -80,18 +79,17 @@ def convert_commitment(base, commitment):
         log.info('%s - %s', row['grant_subject'], row['beneficiary'])
         fts_entry.upsert(row, ['source_file', 'source_id'])
 
-
-def clean_text(text):
-    h = HTMLParser.HTMLParser()
-    text = filter(string.printable.__contains__, text)
-    text = h.unescape(text)
-    text = text.replace('&', '&amp;')
-    return text.encode('utf-8')
+# def clean_text(text):
+#     h = HTMLParser.HTMLParser()
+#     text = filter(string.printable.__contains__, text)
+#     text = h.unescape(text)
+#     text = text.replace('&', '&amp;')
+#     return text.encode('utf-8')
 
 
 def convert_file(fh, url):
     text = fh.read().decode('utf-8')
-    text = clean_text(text)
+    # text = clean_text(text)
     doc = etree.fromstring(text)
     base = {'source_url': url, 'source_id': 0}
     for i, commitment in enumerate(doc.findall('.//commitment')):
@@ -101,23 +99,23 @@ def convert_file(fh, url):
 
 
 def download():
-	try:
-		os.makedirs(CACHE_DIR)
-	except:
-		pass
-	for year in range(2007, datetime.now().year):
-		log.info("Downloading FTS for %s", year)
-		url = BASE_URL % year
-		fn = os.path.join(CACHE_DIR, 'export_%s.zip' % year)
-		if not os.path.isfile(fn):
-			res = requests.get(url)
-			if res.status_code != 200:
-				continue
-			with open(fn, 'wb') as fh:
-				fh.write(res.content)
-		with zipfile.ZipFile(fn, 'r') as zf:
-			print zf, zf.namelist()
+    try:
+        os.makedirs(CACHE_DIR)
+    except:
+        pass
+    # for year in range(2007, datetime.now().year):
+    for year in [2014]:
+        log.info("Downloading FTS for %s", year)
+        url = BASE_URL % year
+        fn = os.path.join(CACHE_DIR, 'export_%s.zip' % year)
+        urllib.urlretrieve(url, fn)
+        with zipfile.ZipFile(fn, 'r') as zf:
+            for name in zf.namelist():
+                fh = zf.open(name, 'r')
+                for evt, el in etree.iterparse(fh):
+                    print evt, el
 
 
 if __name__ == '__main__':
-	download()
+    logging.basicConfig(level=logging.INFO)
+    download()
