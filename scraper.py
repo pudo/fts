@@ -1,4 +1,4 @@
-#coding: utf-8
+# coding: utf-8
 import os
 import urllib
 import logging
@@ -7,7 +7,7 @@ import HTMLParser
 import string
 from datetime import datetime
 
-import requests
+# import requests
 import dataset
 from lxml import etree
 
@@ -17,8 +17,9 @@ CACHE_DIR = 'data'
 NUMCHAR = "0123456789-."
 BASE_URL = 'http://ec.europa.eu/budget/remote/fts/dl/export_%s_en.zip'
 
-engine = dataset.connect('sqlite:///data.sqlite')
-entry = engine['data']
+db = os.environ.get('DATABASE_URI', 'sqlite:///data.sqlite')
+engine = dataset.connect(db)
+entry = engine['eu_fts']
 
 
 def to_float(num):
